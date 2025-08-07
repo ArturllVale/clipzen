@@ -1,10 +1,4 @@
-import { PGlite } from "https://cdn.jsdelivr.net/npm/@electric-sql/pglite/dist/index.js";
-
-// Variável global para o banco de dados
-let db;
-
 document.addEventListener('DOMContentLoaded', async () => {
-  db = new PGlite();
 
   const searchInput = document.getElementById('search-input');
   const itemsGrid = document.getElementById('items-grid');
@@ -66,65 +60,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
 
-  async function initDb() {
-    await db.query(`
-            CREATE TABLE IF NOT EXISTS clipboard_items (
-                id TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                content TEXT NOT NULL,
-                createdAt BIGINT NOT NULL
-            );
-        `);
-    await renderItems(); // Garante que os itens sejam renderizados após a inicialização do DB
+  const STORAGE_KEY = 'clipboard_zen_items';
+
+  function getItems(query = '') {
+    let items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    if (query) {
+      const searchQuery = query.toLowerCase();
+      items = items.filter(item =>
+        item.title.toLowerCase().includes(searchQuery) ||
+        item.content.toLowerCase().includes(searchQuery)
+      );
+    }
+    return items.sort((a, b) => b.createdAt - a.createdAt);
   }
 
-  async function getItems(query = '') {
-    const searchQuery = `%${query.toLowerCase()}%`;
-    const results = await db.query(`
-            SELECT * FROM clipboard_items
-            WHERE lower(title) LIKE $1 OR lower(content) LIKE $1
-            ORDER BY createdAt DESC;
-        `, [searchQuery]);
-    return results.rows;
+  function saveItems(items) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }
 
-  async function addItem(item) {
-    await db.query(`
-            INSERT INTO clipboard_items (id, title, content, createdAt)
-            VALUES ($1, $2, $3, $4);
-        `, [item.id, item.title, item.content, item.createdAt]);
+  function addItem(item) {
+    const items = getItems();
+    items.push(item);
+    saveItems(items);
     renderItems();
   }
 
-  async function updateItem(item) {
-    await db.query(`
-            UPDATE clipboard_items
-            SET title = $1, content = $2
-            WHERE id = $3;
-        `, [item.title, item.content, item.id]);
+  function updateItem(updatedItem) {
+    let items = getItems();
+    items = items.map(item => item.id === updatedItem.id ? updatedItem : item);
+    saveItems(items);
     renderItems();
   }
 
-  async function deleteItem(id) {
-    await db.query('DELETE FROM clipboard_items WHERE id = $1;', [id]);
+  function deleteItem(id) {
+    let items = getItems();
+    items = items.filter(item => item.id !== id);
+    saveItems(items);
     renderItems();
   }
 
-  async function clearAllItems() {
-    await db.query('DELETE FROM clipboard_items;');
+  function clearAllItems() {
+    localStorage.removeItem(STORAGE_KEY);
     renderItems();
   }
 
-  async function importItems(items) {
-    await db.transaction(async (tx) => {
-      await tx.query('DELETE FROM clipboard_items;');
-      for (const item of items) {
-        await tx.query(`
-                    INSERT INTO clipboard_items (id, title, content, createdAt)
-                    VALUES ($1, $2, $3, $4);
-                `, [item.id, item.title, item.content, item.createdAt]);
-      }
-    });
+  function importItems(newItems) {
+    saveItems(newItems);
     renderItems();
   }
 
@@ -263,10 +244,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
 
-  async function openDialog(mode, id = null) {
+  function openDialog(mode, id = null) {
     addEditForm.reset();
     if (mode === 'edit') {
-      const { rows: [item] } = await db.query('SELECT * FROM clipboard_items WHERE id = $1;', [id]);
+      const items = getItems();
+      const item = items.find(item => item.id === id);
       dialogTitle.textContent = 'Editar Item';
       itemIdInput.value = item.id;
       itemTitleInput.value = item.title;
@@ -281,5 +263,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     addEditDialog.classList.add('hidden');
   }
 
-  initDb();
+  renderItems(); // Chama renderItems diretamente, já que initDb não é mais necessário
 });
