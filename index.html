@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clipboard Zen</title>
+  <link rel="stylesheet" href="src/css/style.css">
+  <link rel="icon" href="src/assets/icons/icon-192x192.png" type="image/png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="src/assets/icons/icon-192x192.png">
+  <meta name="theme-color" content="#244B55" />
+  <script src="src/js/config.js"></script>
+  <script type="module" src="src/js/script.js" defer></script>
+</head>
+
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div class="container header-container">
+        <div class="logo-container">
+          <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+          </svg>
+          <span class="logo-text">Clipboard Zen</span>
+        </div>
+        <div class="search-container">
+          <input type="text" id="search-input" placeholder="Pesquisar conteúdo...">
+        </div>
+        <div class="actions-container">
+          <button id="add-item-btn" class="button primary">Adicionar Item</button>
+          <div class="menu-container">
+            <button id="menu-btn" class="button icon-button">⋮</button>
+            <div id="menu-dropdown" class="menu-dropdown hidden">
+              <button id="import-btn" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="feather feather-upload">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Importar de Arquivo</span>
+              </button>
+              <input type="file" id="import-input" accept=".json" class="hidden">
+              <button id="export-btn" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="feather feather-download">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Exportar para Arquivo</span>
+              </button>
+              <button id="clear-data-btn" class="danger menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="feather feather-trash-2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+                <span>Limpar Dados</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div id="items-grid" class="items-grid">
+      </div>
+      <div id="empty-state" class="empty-state hidden">
+        <svg class="logo-large" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+        </svg>
+        <h2 id="empty-state-title">Sua Área de Transferência está Vazia</h2>
+        <p id="empty-state-message">Clique em "Adicionar Item" para salvar seu primeiro conteúdo.</p>
+        <button id="empty-state-add-btn" class="button primary">Adicione Seu Primeiro Item</button>
+      </div>
+    </main>
+
+    <div id="add-edit-dialog" class="dialog hidden">
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <h2 id="dialog-title">Adicionar à Área de Transferência</h2>
+          <p>Cole ou digite qualquer conteúdo que você deseja salvar.</p>
+          <button id="close-dialog-btn" class="close-button">&times;</button>
+        </div>
+        <form id="add-edit-form">
+          <input type="hidden" id="item-id">
+          <div class="form-group">
+            <label for="item-title" class="item-title">Título</label>
+            <input type="text" id="item-title" class="item-titlecss" placeholder="Dê um título ao seu item..." required>
+          </div>
+          <div class="form-group">
+            <label for="item-content" class="item-title">Conteúdo</label>
+            <textarea id="item-content" class="item-content"
+              placeholder="Cole seu link, texto ou trecho de código aqui..." required></textarea>
+          </div>
+          <div class="dialog-footer">
+            <button type="button" id="cancel-dialog-btn" class="button secondary">Cancelar</button>
+            <button type="submit" id="save-item-btn" class="button primary">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <button id="install-pwa-btn" class="button primary install-pwa-btn hidden">Instalar App</button>
+  </div>
+</body>
+
+</html>
