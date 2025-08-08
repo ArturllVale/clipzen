@@ -6,6 +6,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const emptyStateTitle = document.getElementById('empty-state-title');
   const emptyStateMessage = document.getElementById('empty-state-message');
 
+  // Elementos para o sistema de tags
+  const tagsFilterContainer = document.getElementById('tags-filter-container');
+  const activeTagFiltersContainer = document.getElementById('active-tag-filters');
+  const clearFiltersBtn = document.getElementById('clear-filters');
+
   const addItemBtn = document.getElementById('add-item-btn');
   const emptyStateAddBtn = document.getElementById('empty-state-add-btn');
 
@@ -20,6 +25,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const isCodeSwitch = document.getElementById('is-code-switch');
   const languageInputContainer = document.getElementById('language-input-container');
   const codeLanguageInput = document.getElementById('code-language');
+  const itemTagsInput = document.getElementById('item-tags');
+  const itemColorInput = document.getElementById('item-color');
 
   const markdownHelpBtn = document.getElementById('markdown-help-btn');
   const markdownHelpDialog = document.getElementById('markdown-help-dialog');
@@ -31,7 +38,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const importInput = document.getElementById('import-input');
   const exportBtn = document.getElementById('export-btn');
   const clearDataBtn = document.getElementById('clear-data-btn');
-  // Removido: const clearCacheBtn = document.getElementById('clear-cache-btn');
+  const toggleArchivedBtn = document.getElementById('toggle-archived-btn');
+  const toggleDarkModeBtn = document.getElementById('toggle-dark-mode-btn');
 
   const confirmPopup = document.getElementById('confirmPopup');
   const confirmYes = document.getElementById('confirmYes');
@@ -156,22 +164,74 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const STORAGE_KEY = 'clipboard_zen_items';
 
+  // Variáveis para controle de filtros
+  let activeTagFilters = [];
+  let showArchivedItems = false;
+
   function escapeHTML(str) {
     const div = document.createElement('div');
     div.appendChild(document.createTextNode(str));
     return div.innerHTML;
   }
 
+  // Função para processar string de tags em array
+  function processTags(tagsString) {
+    if (!tagsString) return [];
+    return tagsString.split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+  }
+
+  // Função para obter todas as tags únicas
+  function getAllTags() {
+    const items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const allTags = new Set();
+
+    items.forEach(item => {
+      if (item.tags && Array.isArray(item.tags)) {
+        item.tags.forEach(tag => allTags.add(tag));
+      }
+    });
+
+    return Array.from(allTags).sort();
+  }
+
   function getItems(query = '') {
     let items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+    // Filtrar por status de arquivamento
+    if (!showArchivedItems) {
+      items = items.filter(item => !item.archived);
+    }
+
+    // Filtrar por texto de busca
     if (query) {
       const searchQuery = query.toLowerCase();
       items = items.filter(item =>
         item.title.toLowerCase().includes(searchQuery) ||
-        item.content.toLowerCase().includes(searchQuery)
+        item.content.toLowerCase().includes(searchQuery) ||
+        (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchQuery)))
       );
     }
-    return items.sort((a, b) => b.createdAt - a.createdAt);
+
+    // Filtrar por tags ativas
+    if (activeTagFilters.length > 0) {
+      items = items.filter(item =>
+        item.tags && activeTagFilters.every(tag => item.tags.includes(tag))
+      );
+    }
+
+    // Ordenar por fixados primeiro, depois por data de criação
+    return items.sort((a, b) => {
+      // Se ambos são fixados ou ambos não são fixados, ordena por data
+      if ((a.pinned && b.pinned) || (!a.pinned && !b.pinned)) {
+        return b.createdAt - a.createdAt;
+      }
+      // Se apenas a é fixado, a vem primeiro
+      if (a.pinned) return -1;
+      // Se apenas b é fixado, b vem primeiro
+      return 1;
+    });
   }
 
   function saveItems(items) {
@@ -235,6 +295,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       items.forEach(item => {
         const itemEl = document.createElement('div');
         itemEl.className = 'clipboard-item';
+
+        // Aplica a cor personalizada, se existir
+        if (item.color) {
+          itemEl.classList.add('custom-color');
+          itemEl.style.borderLeftColor = item.color;
+        }
+
+        // Adiciona classe para itens fixados
+        if (item.pinned) {
+          itemEl.classList.add('pinned');
+        }
+
+        // Adiciona classe para itens arquivados
+        if (item.archived) {
+          itemEl.classList.add('archived');
+        }
         let contentHTML;
         if (item.isCode) {
           const language = item.language || 'plaintext';
@@ -251,11 +327,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="item-content">${contentHTML}</div>
                         <button class="expand-btn">Expandir</button>
                     </div>
+                    ${item.tags && item.tags.length > 0 ? `
+                    <div class="tags-container">
+                        ${item.tags.map(tag => `
+                            <span class="tag" data-tag="${tag}">${tag}</span>
+                        `).join('')}
+                    </div>
+                    ` : ''}
                     <div class="item-footer">
                         <span>${new Date(item.createdAt).toLocaleString()}</span>
                         <div class="item-actions">
                             <button class="button icon-button copy-btn" data-id="${item.id}" title="Copiar">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-copy"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                            <button class="button icon-button pin-btn ${item.pinned ? 'active' : ''}" data-id="${item.id}" title="${item.pinned ? 'Desafixar' : 'Fixar'}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                            </button>
+                            <button class="button icon-button archive-btn ${item.archived ? 'active' : ''}" data-id="${item.id}" title="${item.archived ? 'Desarquivar' : 'Arquivar'}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-archive"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
                             </button>
                             <button class="button icon-button edit-btn" data-id="${item.id}" title="Editar">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
@@ -299,6 +388,56 @@ document.addEventListener('DOMContentLoaded', async () => {
   closeDialogBtn.addEventListener('click', closeDialog);
   cancelDialogBtn.addEventListener('click', closeDialog);
 
+  // Função para atualizar os filtros de tags
+  function updateTagFilters() {
+    const allTags = getAllTags();
+
+    // Se não houver tags, esconde o container de filtros
+    if (allTags.length === 0) {
+      tagsFilterContainer.classList.add('hidden');
+      return;
+    }
+
+    // Atualiza o container de filtros ativos
+    activeTagFiltersContainer.innerHTML = '';
+
+    // Se houver filtros ativos, mostra o container
+    if (activeTagFilters.length > 0) {
+      tagsFilterContainer.classList.remove('hidden');
+
+      // Adiciona cada tag ativa como um filtro
+      activeTagFilters.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'tag tag-filter active';
+        tagEl.textContent = tag;
+        tagEl.dataset.tag = tag;
+
+        const closeBtn = document.createElement('span');
+        closeBtn.className = 'tag-close';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          // Remove a tag dos filtros ativos
+          activeTagFilters = activeTagFilters.filter(t => t !== tag);
+          updateTagFilters();
+          renderItems();
+        });
+
+        tagEl.appendChild(closeBtn);
+        activeTagFiltersContainer.appendChild(tagEl);
+      });
+    } else {
+      tagsFilterContainer.classList.add('hidden');
+    }
+  }
+
+  // Event listener para limpar todos os filtros
+  clearFiltersBtn.addEventListener('click', () => {
+    activeTagFilters = [];
+    updateTagFilters();
+    renderItems();
+  });
+
   addEditForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const id = itemIdInput.value;
@@ -306,12 +445,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const content = itemContentInput.value;
     const isCode = isCodeSwitch.checked;
     const language = codeLanguageInput.value;
+    const tagsString = itemTagsInput.value;
+    const color = itemColorInput.value;
 
     const itemData = {
       title,
       content,
       isCode,
       language: isCode ? language : null,
+      tags: processTags(tagsString),
+      color: color !== '#ffffff' ? color : null,
+      pinned: id ? (getItems().find(i => i.id === id)?.pinned || false) : false,
+      archived: id ? (getItems().find(i => i.id === id)?.archived || false) : false
     };
 
     if (id) { // Editing
@@ -326,13 +471,58 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
     closeDialog();
+
+    // Atualiza os filtros de tags após adicionar/editar um item
+    updateTagFilters();
   });
+
+  // Função para alternar o estado de fixação de um item
+  function togglePinItem(id) {
+    const items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const index = items.findIndex(item => item.id === id);
+
+    if (index > -1) {
+      items[index].pinned = !items[index].pinned;
+      saveItems(items);
+      renderItems();
+
+      const action = items[index].pinned ? 'fixado' : 'desfixado';
+      showNotification(`Item ${action} com sucesso!`, 'success');
+    }
+  }
+
+  // Função para alternar o estado de arquivamento de um item
+  function toggleArchiveItem(id) {
+    const items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const index = items.findIndex(item => item.id === id);
+
+    if (index > -1) {
+      items[index].archived = !items[index].archived;
+      saveItems(items);
+      renderItems();
+
+      const action = items[index].archived ? 'arquivado' : 'desarquivado';
+      showNotification(`Item ${action} com sucesso!`, 'success');
+    }
+  }
+
+  // Função para adicionar uma tag ao filtro
+  function addTagToFilter(tag) {
+    if (!activeTagFilters.includes(tag)) {
+      activeTagFilters.push(tag);
+      updateTagFilters();
+      renderItems();
+    }
+  }
 
   itemsGrid.addEventListener('click', (e) => {
     const copyBtn = e.target.closest('.copy-btn');
     const editBtn = e.target.closest('.edit-btn');
     const deleteBtn = e.target.closest('.delete-btn');
     const expandBtn = e.target.closest('.expand-btn');
+    const pinBtn = e.target.closest('.pin-btn');
+    const archiveBtn = e.target.closest('.archive-btn');
+    const tagEl = e.target.closest('.tag');
 
     if (copyBtn) {
       const id = copyBtn.dataset.id;
@@ -352,6 +542,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       const contentWrapper = expandBtn.closest('.item-content-wrapper');
       contentWrapper.classList.toggle('expanded');
       expandBtn.textContent = contentWrapper.classList.contains('expanded') ? 'Recolher' : 'Expandir';
+    } else if (pinBtn) {
+      togglePinItem(pinBtn.dataset.id);
+    } else if (archiveBtn) {
+      toggleArchiveItem(archiveBtn.dataset.id);
+    } else if (tagEl) {
+      const tag = tagEl.dataset.tag;
+      if (tag) {
+        addTagToFilter(tag);
+      }
     }
   });
 
@@ -459,9 +658,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       itemContentInput.value = item.content;
       isCodeSwitch.checked = item.isCode || false;
       codeLanguageInput.value = item.language || '';
+      itemTagsInput.value = item.tags ? item.tags.join(', ') : '';
+      itemColorInput.value = item.color || '#ffffff';
     } else {
       dialogTitle.textContent = 'Adicionar Item';
       isCodeSwitch.checked = false;
+      itemColorInput.value = '#ffffff';
     }
     toggleLanguageInput();
     addEditDialog.classList.remove('hidden');
@@ -514,6 +716,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     closeConfirmDialog();
   });
+
+  // Função para alternar a exibição de itens arquivados
+  function toggleArchivedItems() {
+    showArchivedItems = !showArchivedItems;
+    toggleArchivedBtn.querySelector('span').textContent = showArchivedItems ? 'Ocultar Arquivados' : 'Mostrar Arquivados';
+    renderItems();
+    showNotification(`Itens arquivados ${showArchivedItems ? 'visíveis' : 'ocultos'}`, 'success');
+  }
+
+  // Event listener para o botão de alternar itens arquivados
+  toggleArchivedBtn.addEventListener('click', toggleArchivedItems);
+
+  // Função para alternar o modo escuro
+  function toggleDarkMode() {
+    const isDarkMode = document.body.getAttribute('data-theme') === 'dark';
+
+    if (isDarkMode) {
+      document.body.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.body.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    }
+  }
+
+  // Event listener para o botão de alternar modo escuro
+  toggleDarkModeBtn.addEventListener('click', toggleDarkMode);
+
+  // Verificar e aplicar o tema salvo
+  function applyTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.body.setAttribute('data-theme', 'dark');
+    } else {
+      document.body.removeAttribute('data-theme');
+    }
+  }
+
+  // Aplicar o tema ao carregar a página
+  applyTheme();
 
   renderItems();
 });

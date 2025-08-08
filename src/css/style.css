@@ -2,12 +2,30 @@
   --primary-color: #05649b;
   --background-color: #f0f4f7;
   --accent-color: #fc260a;
-  --hover-color: #e0e0e0; /* Nova variável para a cor de hover */
+  --hover-color: #e0e0e0;
   --text-color: #333;
   --card-background: #ffffff;
   --border-color: #dddddd;
   --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   --font-sans: 'Inter', sans-serif;
+  --archived-background: #f8f8f8;
+  --archived-text: #888;
+  --pinned-indicator: #ffcc00;
+}
+
+/* Modo escuro */
+[data-theme="dark"] {
+  --primary-color: #3498db;
+  --background-color: #1a1a1a;
+  --accent-color: #e74c3c;
+  --hover-color: #333333;
+  --text-color: #f0f0f0;
+  --card-background: #2c2c2c;
+  --border-color: #444444;
+  --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --archived-background: #252525;
+  --archived-text: #999;
+  --pinned-indicator: #ffd700;
 }
 
 body {
@@ -100,6 +118,57 @@ body {
   margin-left: auto; /* Empurra as ações para a direita */
 }
 
+/* Estilo para o botão de modo escuro */
+#toggle-dark-mode-btn {
+  background-color: transparent;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+  position: relative;
+}
+
+#toggle-dark-mode-btn:hover {
+  background-color: var(--hover-color);
+}
+
+/* Ícones de sol e lua */
+#toggle-dark-mode-btn .light-icon,
+#toggle-dark-mode-btn .dark-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* No modo claro, mostra o ícone da lua e esconde o do sol */
+#toggle-dark-mode-btn .light-icon {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.5);
+}
+
+#toggle-dark-mode-btn .dark-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* No modo escuro, mostra o ícone do sol e esconde o da lua */
+[data-theme="dark"] #toggle-dark-mode-btn .light-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  fill: #ffd700;
+  stroke: #ffd700;
+}
+
+[data-theme="dark"] #toggle-dark-mode-btn .dark-icon {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.5);
+}
+
 .empty-state-title {
   margin-top: 0;
   margin-bottom: 0.5rem;
@@ -137,6 +206,46 @@ body {
 
 .clipboard-item:hover {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Estilos para itens fixados */
+.clipboard-item.pinned {
+  position: relative;
+  border-top: 3px solid var(--pinned-indicator);
+}
+
+.clipboard-item.pinned::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  right: 10px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 10px solid var(--pinned-indicator);
+  transform: rotate(180deg);
+}
+
+.pin-btn.active svg {
+  fill: var(--pinned-indicator);
+  stroke: var(--pinned-indicator);
+}
+
+/* Estilos para itens arquivados */
+.clipboard-item.archived {
+  background-color: var(--archived-background);
+  opacity: 0.8;
+}
+
+.clipboard-item.archived .item-header,
+.clipboard-item.archived .item-content,
+.clipboard-item.archived .item-footer {
+  color: var(--archived-text);
+}
+
+.archive-btn.active svg {
+  fill: var(--text-color);
 }
 
 .item-header {
@@ -797,4 +906,103 @@ input:checked+.slider:before {
 @keyframes popupFadeIn {
     from { opacity: 0; transform: scale(0.9); }
     to { opacity: 1; transform: scale(1); }
+}
+
+/* Estilos para o sistema de tags */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  background-color: #e0e0e0;
+  color: #333;
+  cursor: pointer;
+}
+
+.tag:hover {
+  opacity: 0.8;
+}
+
+.tag-filter {
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tag-filter.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.tag-close {
+  margin-left: 0.3rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.tag-close:hover {
+  color: var(--accent-color);
+}
+
+/* Estilos para o seletor de cores */
+.color-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.color-preview {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+input[type="color"] {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Estilos para itens com cores personalizadas */
+.clipboard-item.custom-color {
+  border-left: 4px solid;
+}
+
+/* Estilos para o filtro de tags */
+.tags-filter-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  box-shadow: var(--box-shadow);
+}
+
+.filter-label {
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+.clear-filters {
+  margin-left: auto;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.clear-filters:hover {
+  text-decoration: underline;
 }
