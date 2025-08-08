@@ -733,7 +733,7 @@ input:checked+.slider:before {
     gap: 0;
   }
   .button {
-    padding: 0.6rem 0.5rem 0.5rem 0.5rem; /* Ajusta o padding para telas menores */
+    padding: 0.66rem 0.5rem 0.5rem 0.5rem; /* Ajusta o padding para telas menores */
     font-size: 0.8rem; /* Reduz o tamanho da fonte */
   }
 }

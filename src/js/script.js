@@ -103,9 +103,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       installPwaBtn.disabled = false;
       installPwaBtn.querySelector('span').textContent = "Instalar App";
     } else {
-      // Se não tiver o prompt de instalação disponível e não for iOS
-      installPwaBtn.disabled = true;
-      installPwaBtn.querySelector('span').textContent = "Instalação Indisponível";
+      // Mesmo sem o prompt, permitimos a instalação manual no Android
+      if (isAndroid()) {
+        installPwaBtn.disabled = false;
+        installPwaBtn.querySelector('span').textContent = "Instalar Manualmente";
+      } else {
+        // Para desktop sem prompt disponível
+        installPwaBtn.disabled = true;
+        installPwaBtn.querySelector('span').textContent = "Instalação Indisponível";
+      }
     }
   }
 
@@ -123,7 +129,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    // Para Android e desktop, usamos o prompt de instalação
+    // Para Android sem prompt disponível, mostramos instruções manuais
+    if (isAndroid() && !deferredPrompt) {
+      alert('Para instalar este app no Android:\n\n1. Toque no menu (três pontos) no canto superior direito do Chrome\n2. Selecione "Instalar aplicativo" ou "Adicionar à tela inicial"\n\nSe a opção não aparecer, tente atualizar a página ou verificar as configurações do Chrome.');
+      return;
+    }
+
+    // Para Android e desktop com prompt disponível
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
@@ -151,7 +163,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // --- Service Worker Registration ---
   if (window.APP_CONFIG && window.APP_CONFIG.MODE === 'production' && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
+      // Usando caminho relativo para o Service Worker
+      navigator.serviceWorker.register('./sw.js')
         .then(registration => {
           console.log('Service Worker registrado com sucesso:', registration);
         })

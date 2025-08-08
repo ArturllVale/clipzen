@@ -1,13 +1,19 @@
-const CACHE_NAME = 'clipboard-zen-cache-v1';
+const CACHE_NAME = 'clipboard-zen-cache-v2';
 const urlsToCache = [
   './',
   './index.html',
   './src/css/style.css',
   './src/js/script.js',
+  './src/js/config.js',
   './manifest.json',
+  './assets/icons/icon-192x192.png',
+  './assets/icons/icon-512x512.png',
   './src/assets/icons/icon-192x192.png',
   './src/assets/icons/icon-512x512.png',
-  'https://cdn.jsdelivr.net/npm/@electric-sql/pglite/dist/index.js'
+  'https://cdn.jsdelivr.net/npm/@electric-sql/pglite/dist/index.js',
+  'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js'
 ];
 
 self.addEventListener('install', event => {
