@@ -31,77 +31,112 @@ document.addEventListener('DOMContentLoaded', async () => {
   const importInput = document.getElementById('import-input');
   const exportBtn = document.getElementById('export-btn');
   const clearDataBtn = document.getElementById('clear-data-btn');
-  const clearCacheBtn = document.getElementById('clear-cache-btn');
+  // Removido: const clearCacheBtn = document.getElementById('clear-cache-btn');
 
   const confirmPopup = document.getElementById('confirmPopup');
   const confirmYes = document.getElementById('confirmYes');
   const confirmNo = document.getElementById('confirmNo');
 
-  const installPwaBtn = document.getElementById('install-pwa-btn');
   const notificationContainer = document.getElementById('notification-container');
-  let deferredPrompt;
   let itemToDeleteId = null;
 
   // --- PWA Install ---
+  const installPwaBtn = document.getElementById('install-pwa-btn');
+  let deferredPrompt;
+
   // Verifica se o app já está instalado
   function isAppInstalled() {
-    // Verifica se está rodando como PWA
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      return true;
-    }
+    // Verifica se está em modo standalone (PWA instalado)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
-    // Verifica se foi instalado anteriormente (usando localStorage)
-    return localStorage.getItem('appInstalled') === 'true';
+    // Verifica se está em modo standalone no iOS
+    const isIOSStandalone = navigator.standalone === true;
+
+    // Verifica se foi marcado como instalado no localStorage
+    const wasInstalled = localStorage.getItem('appInstalled') === 'true';
+
+    // Verifica se está sendo executado como um app Android (tela cheia)
+    const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+
+    // Verifica se está sendo executado como um app em janela (Windows/macOS)
+    const isMinimalUi = window.matchMedia('(display-mode: minimal-ui)').matches;
+
+    return isStandalone || isIOSStandalone || wasInstalled || isFullscreen || isMinimalUi;
   }
 
-  // Esconde o botão de instalação se o app já estiver instalado
-  if (isAppInstalled()) {
-    installPwaBtn.classList.add('hidden');
+  // Verifica se é um dispositivo iOS
+  function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   }
 
-  window.addEventListener('beforeinstallprompt', (e) => {
-    // Se o app já está instalado, não mostra o botão
+  // Verifica se é um dispositivo Android
+  function isAndroid() {
+    return /Android/.test(navigator.userAgent);
+  }
+
+  // Função para mostrar ou ocultar o botão de instalação
+  function updateInstallButtonVisibility() {
+    // Se o app já estiver instalado, oculta o botão independentemente do dispositivo
     if (isAppInstalled()) {
+      installPwaBtn.classList.add('hidden');
       return;
     }
 
-    console.log('Evento beforeinstallprompt disparado');
+    // Para dispositivos iOS, mostramos o botão mesmo sem o deferredPrompt
+    // pois o iOS não dispara o evento beforeinstallprompt
+    if (isIOS()) {
+      installPwaBtn.textContent = "Adicionar à Tela Inicial";
+      installPwaBtn.classList.remove('hidden');
+      return;
+    }
+
+    // Para Android e desktop, só mostramos se tivermos o deferredPrompt
+    if (deferredPrompt) {
+      installPwaBtn.textContent = "Instalar App";
+      installPwaBtn.classList.remove('hidden');
+    } else {
+      installPwaBtn.classList.add('hidden');
+    }
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    installPwaBtn.classList.remove('hidden');
+    console.log('Evento beforeinstallprompt disparado');
+    updateInstallButtonVisibility();
   });
 
   installPwaBtn.addEventListener('click', async () => {
-    console.log('Botão de instalação clicado');
+    // Para dispositivos iOS, mostramos instruções de como instalar
+    if (isIOS()) {
+      alert('Para instalar este app na sua tela inicial: toque no ícone de compartilhamento e depois em "Adicionar à Tela de Início".');
+      return;
+    }
+
+    // Para Android e desktop, usamos o prompt de instalação
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       console.log('Resultado do prompt de instalação:', outcome);
       if (outcome === 'accepted') {
-        deferredPrompt = null;
-        installPwaBtn.classList.add('hidden');
-        // Marca o app como instalado
+        // O usuário instalou o app
         localStorage.setItem('appInstalled', 'true');
+        deferredPrompt = null;
+        updateInstallButtonVisibility(); // Oculta o botão imediatamente
       }
-    } else {
-      console.log('Nenhum prompt de instalação disponível');
     }
   });
 
-  // Verifica novamente se o app está instalado após o carregamento da página
-  // Isso ajuda a garantir que o botão seja ocultado corretamente em dispositivos mobile
-  window.addEventListener('load', () => {
-    if (isAppInstalled()) {
-      installPwaBtn.classList.add('hidden');
+  // Oculta o botão se o modo de exibição mudar para standalone
+  window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
+    if (e.matches) {
+      updateInstallButtonVisibility();
     }
   });
 
-  // Verificação adicional após um pequeno delay para garantir que o botão seja ocultado
-  setTimeout(() => {
-    if (isAppInstalled()) {
-      installPwaBtn.classList.add('hidden');
-    }
-  }, 1000);
+  // Verificação inicial
+  updateInstallButtonVisibility();
+
 
   // --- Service Worker Registration ---
   if (window.APP_CONFIG && window.APP_CONFIG.MODE === 'production' && 'serviceWorker' in navigator) {
@@ -398,10 +433,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Adiciona o event listener para o botão de limpar cache
-  clearCacheBtn.addEventListener('click', () => {
-    clearCache();
-  });
+  // Removido: Event listener para o botão de limpar cache
 
   markdownHelpBtn.addEventListener('click', () => {
     markdownHelpDialog.classList.remove('hidden');
@@ -479,5 +511,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     closeConfirmDialog();
   });
 
-  renderItems(); // Chama renderItems diretamente, já que initDb não é mais necessário
+  renderItems();
 });
