@@ -1,3 +1,3 @@
 const APP_CONFIG = {
-  MODE: 'development' // Altere para 'production' para habilitar o Service Worker e 'development' para desabilitar
+  MODE: 'production' // Altere para 'production' para habilitar o Service Worker e 'development' para desabilitar
 };

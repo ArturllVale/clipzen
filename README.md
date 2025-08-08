@@ -74,7 +74,16 @@ const APP_CONFIG = {
 - **development**: Modo de desenvolvimento (sem Service Worker, sem funcionamento offline)
 - **production**: Modo de produção (com Service Worker para funcionamento offline)
 
-## 📤 Importação/Exportação de Dados
+## 🚀 Modo de Produção
+
+Para usar o app em modo de produção com todas as funcionalidades de PWA (Progressive Web App), incluindo instalação e funcionamento offline:
+
+1. Altere o modo no arquivo `src/js/config.js` de `'development'` para `'production'`
+2. Recarregue a página
+3. O Service Worker será registrado e o app funcionará offline
+4. O botão "Instalar App" aparecerá quando disponível para instalação como PWA
+
+## � Importação/Exportação de Dados
 
 - **Exportar**: Clique no menu (⋮) > "Exportar json" para fazer backup dos seus dados
 - **Importar**: Clique no menu (⋮) > "Importar Json" para restaurar dados de um backup

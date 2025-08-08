@@ -65,21 +65,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    console.log('Evento beforeinstallprompt disparado');
     e.preventDefault();
     deferredPrompt = e;
     installPwaBtn.classList.remove('hidden');
   });
 
   installPwaBtn.addEventListener('click', async () => {
+    console.log('Botão de instalação clicado');
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
+      console.log('Resultado do prompt de instalação:', outcome);
       if (outcome === 'accepted') {
         deferredPrompt = null;
         installPwaBtn.classList.add('hidden');
         // Marca o app como instalado
         localStorage.setItem('appInstalled', 'true');
       }
+    } else {
+      console.log('Nenhum prompt de instalação disponível');
     }
   });
 
