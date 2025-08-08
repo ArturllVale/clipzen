@@ -115,11 +115,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Função para verificar se o PWA é instalável
+  async function checkInstallability() {
+    if ('getInstalledRelatedApps' in navigator) {
+      try {
+        const relatedApps = await navigator.getInstalledRelatedApps();
+        const isInstalled = relatedApps.some(app =>
+          app.id === 'clipboard-zen' ||
+          app.url === window.location.origin
+        );
+
+        if (isInstalled) {
+          localStorage.setItem('appInstalled', 'true');
+        }
+
+        console.log('App instalado?', isInstalled);
+        return !isInstalled; // Retorna true se o app NÃO estiver instalado
+      } catch (error) {
+        console.error('Erro ao verificar apps instalados:', error);
+      }
+    }
+
+    // Se não conseguir verificar, assume que é instalável
+    return true;
+  }
+
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     console.log('Evento beforeinstallprompt disparado');
     updateInstallButtonState();
+  });
+
+  // Verificar instalabilidade quando a página carregar
+  window.addEventListener('load', async () => {
+    const isInstallable = await checkInstallability();
+    console.log('PWA é instalável:', isInstallable);
+
+    if (isInstallable && isAndroid()) {
+      // Força a atualização do estado do botão
+      updateInstallButtonState();
+    }
   });
 
   installPwaBtn.addEventListener('click', async () => {
@@ -131,7 +167,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Para Android sem prompt disponível, mostramos instruções manuais
     if (isAndroid() && !deferredPrompt) {
-      alert('Para instalar este app no Android:\n\n1. Toque no menu (três pontos) no canto superior direito do Chrome\n2. Selecione "Instalar aplicativo" ou "Adicionar à tela inicial"\n\nSe a opção não aparecer, tente atualizar a página ou verificar as configurações do Chrome.');
+      alert('Para instalar o aplicativo completo no Android:\n\n1. Toque no menu (três pontos) no canto superior direito do Chrome\n2. Selecione "Instalar aplicativo" (NÃO "Adicionar à tela inicial")\n\nSe a opção "Instalar aplicativo" não aparecer:\n- Verifique se você está usando o Chrome\n- Tente atualizar a página\n- Limpe o cache do navegador\n- Verifique se o Chrome está atualizado');
+
+      // Forçar uma atualização da página para tentar disparar o evento beforeinstallprompt
+      setTimeout(() => {
+        if (confirm('Deseja atualizar a página para tentar novamente a instalação?')) {
+          window.location.reload();
+        }
+      }, 5000);
+
       return;
     }
 
@@ -155,9 +199,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateInstallButtonState();
     }
   });
-
   // Verificação inicial
   updateInstallButtonState();
+
+  // Verificação periódica para o evento beforeinstallprompt
+  // Às vezes o Chrome para Android dispara este evento com atraso
+  let installCheckInterval = setInterval(() => {
+    if (deferredPrompt) {
+      // Se já temos o prompt, não precisamos mais verificar
+      clearInterval(installCheckInterval);
+    } else if (isAndroid() && !isAppInstalled()) {
+      // Forçar uma nova verificação de instalabilidade
+      console.log('Verificando disponibilidade de instalação...');
+      updateInstallButtonState();
+    }
+  }, 3000); // Verifica a cada 3 segundos
+
 
 
   // --- Service Worker Registration ---
