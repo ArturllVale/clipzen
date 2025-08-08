@@ -74,28 +74,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     return /Android/.test(navigator.userAgent);
   }
 
-  // Função para mostrar ou ocultar o botão de instalação
-  function updateInstallButtonVisibility() {
-    // Se o app já estiver instalado, oculta o botão independentemente do dispositivo
+  // Função para atualizar o estado do botão de instalação
+  function updateInstallButtonState() {
+    // Se o app já estiver instalado, desabilita o botão
     if (isAppInstalled()) {
-      installPwaBtn.classList.add('hidden');
+      installPwaBtn.disabled = true;
+      installPwaBtn.querySelector('span').textContent = "App Instalado";
       return;
     }
 
-    // Para dispositivos iOS, mostramos o botão mesmo sem o deferredPrompt
-    // pois o iOS não dispara o evento beforeinstallprompt
+    // Para dispositivos iOS
     if (isIOS()) {
-      installPwaBtn.textContent = "Adicionar à Tela Inicial";
-      installPwaBtn.classList.remove('hidden');
+      installPwaBtn.disabled = false;
+      installPwaBtn.querySelector('span').textContent = "Adicionar à Tela Inicial";
       return;
     }
 
-    // Para Android e desktop, só mostramos se tivermos o deferredPrompt
+    // Para Android e desktop
     if (deferredPrompt) {
-      installPwaBtn.textContent = "Instalar App";
-      installPwaBtn.classList.remove('hidden');
+      installPwaBtn.disabled = false;
+      installPwaBtn.querySelector('span').textContent = "Instalar App";
     } else {
-      installPwaBtn.classList.add('hidden');
+      // Se não tiver o prompt de instalação disponível e não for iOS
+      installPwaBtn.disabled = true;
+      installPwaBtn.querySelector('span').textContent = "Instalação Indisponível";
     }
   }
 
@@ -103,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     e.preventDefault();
     deferredPrompt = e;
     console.log('Evento beforeinstallprompt disparado');
-    updateInstallButtonVisibility();
+    updateInstallButtonState();
   });
 
   installPwaBtn.addEventListener('click', async () => {
@@ -122,20 +124,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         // O usuário instalou o app
         localStorage.setItem('appInstalled', 'true');
         deferredPrompt = null;
-        updateInstallButtonVisibility(); // Oculta o botão imediatamente
+        updateInstallButtonState(); // Atualiza o estado do botão imediatamente
       }
     }
   });
 
-  // Oculta o botão se o modo de exibição mudar para standalone
+  // Atualiza o estado do botão se o modo de exibição mudar para standalone
   window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
     if (e.matches) {
-      updateInstallButtonVisibility();
+      updateInstallButtonState();
     }
   });
 
   // Verificação inicial
-  updateInstallButtonVisibility();
+  updateInstallButtonState();
 
 
   // --- Service Worker Registration ---
@@ -286,6 +288,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function updateExportButtonState(hasItems) {
     exportBtn.disabled = !hasItems;
     clearDataBtn.disabled = !hasItems;
+    // O botão de instalação não depende da existência de itens
+    updateInstallButtonState();
   }
 
   // Event Listeners
