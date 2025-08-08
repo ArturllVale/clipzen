@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const importInput = document.getElementById('import-input');
   const exportBtn = document.getElementById('export-btn');
   const clearDataBtn = document.getElementById('clear-data-btn');
+  const clearCacheBtn = document.getElementById('clear-cache-btn');
 
   const confirmPopup = document.getElementById('confirmPopup');
   const confirmYes = document.getElementById('confirmYes');
@@ -81,6 +82,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   });
+
+  // Verifica novamente se o app está instalado após o carregamento da página
+  // Isso ajuda a garantir que o botão seja ocultado corretamente em dispositivos mobile
+  window.addEventListener('load', () => {
+    if (isAppInstalled()) {
+      installPwaBtn.classList.add('hidden');
+    }
+  });
+
+  // Verificação adicional após um pequeno delay para garantir que o botão seja ocultado
+  setTimeout(() => {
+    if (isAppInstalled()) {
+      installPwaBtn.classList.add('hidden');
+    }
+  }, 1000);
 
   // --- Service Worker Registration ---
   if (window.APP_CONFIG && window.APP_CONFIG.MODE === 'production' && 'serviceWorker' in navigator) {
@@ -346,6 +362,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   confirmNo.addEventListener('click', () => {
     confirmPopup.style.display = 'none'; // Fecha sem fazer nada
+  });
+
+  // Função para limpar o cache do Service Worker
+  async function clearCache() {
+    if ('serviceWorker' in navigator) {
+      try {
+        // Limpa todos os caches
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+
+        // Envia uma mensagem para o Service Worker para pular a espera e ativar o novo cache
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration && registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
+        // Recarrega a página para garantir que os novos arquivos sejam carregados
+        window.location.reload();
+
+        showNotification('Cache limpo com sucesso!', 'success');
+      } catch (error) {
+        console.error('Erro ao limpar o cache:', error);
+        showNotification('Erro ao limpar o cache', 'danger');
+      }
+    } else {
+      showNotification('Service Worker não suportado neste navegador', 'danger');
+    }
+  }
+
+  // Adiciona o event listener para o botão de limpar cache
+  clearCacheBtn.addEventListener('click', () => {
+    clearCache();
   });
 
   markdownHelpBtn.addEventListener('click', () => {

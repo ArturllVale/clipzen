@@ -46,3 +46,10 @@ self.addEventListener('activate', event => {
     })
   );
 });
+
+// Trata a mensagem SKIP_WAITING para pular a espera e ativar o novo service worker
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
