@@ -728,6 +728,16 @@ input:checked+.slider:before {
   }
 }
 
+@media (max-width: 500px) {
+  .header-container {
+    gap: 0;
+  }
+  .button {
+    padding: 0.6rem 0.5rem 0.5rem 0.5rem; /* Ajusta o padding para telas menores */
+    font-size: 0.8rem; /* Reduz o tamanho da fonte */
+  }
+}
+
 /* Mobile First Responsive Design */
 @media (min-width: 640px) {
   .items-grid {
