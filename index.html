@@ -10,6 +10,9 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="src/assets/icons/icon-192x192.png">
   <meta name="theme-color" content="#244B55" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="src/js/config.js"></script>
   <script type="module" src="src/js/script.js" defer></script>
 </head>
@@ -27,6 +30,11 @@
           <span class="logo-text">Clipboard Zen</span>
         </div>
         <div class="search-container">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
           <input type="text" id="search-input" placeholder="Pesquisar conteúdo...">
         </div>
         <div class="actions-container">
@@ -42,7 +50,7 @@
                   <polyline points="17 8 12 3 7 8"></polyline>
                   <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
-                <span>Importar de Arquivo</span>
+                <span>Importar Json</span>
               </button>
               <input type="file" id="import-input" accept=".json" class="hidden">
               <button id="export-btn" class="menu-item">
@@ -53,7 +61,7 @@
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                <span>Exportar para Arquivo</span>
+                <span>Exportar json</span>
               </button>
               <button id="clear-data-btn" class="danger menu-item">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -66,6 +74,19 @@
                 </svg>
                 <span>Limpar Dados</span>
               </button>
+              <!-- Popup de confirmação -->
+              <div id="confirmPopup" class="popup-overlay">
+                <div class="popup-box">
+                  <h3>Confirmação</h3>
+                  <p>Você tem certeza que deseja apagar tudo?</p>
+                  <div class="popup-actions">
+                    <button id="confirmYes" class="btn-danger">Sim</button>
+                    <button id="confirmNo" class="btn-secondary">Não</button>
+                  </div>
+                  <p>⚠️ Essa ação é irreversível!</p>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -81,7 +102,7 @@
           <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
           <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
         </svg>
-        <h2 id="empty-state-title">Sua Área de Transferência está Vazia</h2>
+        <h2 id="empty-state-title" class="empty-state-title">Sua Área de Transferência está Vazia</h2>
         <p id="empty-state-message">Clique em "Adicionar Item" para salvar seu primeiro conteúdo.</p>
         <button id="empty-state-add-btn" class="button primary">Adicione Seu Primeiro Item</button>
       </div>
@@ -101,7 +122,23 @@
             <input type="text" id="item-title" class="item-titlecss" placeholder="Dê um título ao seu item..." required>
           </div>
           <div class="form-group">
-            <label for="item-content" class="item-title">Conteúdo</label>
+            <div class="form-switch">
+              <label for="is-code-switch">É um trecho de código?</label>
+              <label class="switch">
+                <input type="checkbox" id="is-code-switch">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group hidden" id="language-input-container">
+            <label for="code-language">Linguagem</label>
+            <input type="text" id="code-language" placeholder="ex: javascript, python, html">
+          </div>
+          <div class="form-group">
+            <div class="label-container">
+              <label for="item-content" class="item-title">Conteúdo</label>
+              <button type="button" id="markdown-help-btn" class="markdown-help-btn">?</button>
+            </div>
             <textarea id="item-content" class="item-content"
               placeholder="Cole seu link, texto ou trecho de código aqui..." required></textarea>
           </div>
@@ -113,8 +150,42 @@
       </div>
     </div>
 
+    <div id="markdown-help-dialog" class="dialog hidden">
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <h2>Guia Rápido de Markdown</h2>
+          <button id="close-markdown-help-btn" class="close-button">&times;</button>
+        </div>
+        <div class="markdown-help-content">
+          <p><span>Negrito:</span> **texto** → <strong>texto</strong></p>
+          <p><span>Itálico:</span> *texto* → <em>texto</em></p>
+          <p><span>Código:</span> `código` → <code>código</code></p>
+          <p><span>Link:</span> [texto do link](https://...) → <a href="#">texto do link</a></p>
+          <p><span>Lista:</span> - Item 1 →
+          <ul>
+            <li style="margin-left: 20px;">Item 1</li>
+          </ul>
+          </p>
+        </div>
+      </div>
+    </div>
+
     <button id="install-pwa-btn" class="button primary install-pwa-btn hidden">Instalar App</button>
   </div>
+  <div id="confirm-dialog" class="dialog hidden">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <h2 id="confirm-dialog-title">Confirmar Exclusão</h2>
+        <button id="close-confirm-dialog-btn" class="close-button">&times;</button>
+      </div>
+      <p id="confirm-dialog-message">Tem certeza que deseja excluir este item?</p>
+      <div class="dialog-footer">
+        <button type="button" id="cancel-confirm-btn" class="button secondary">Cancelar</button>
+        <button type="button" id="confirm-delete-btn" class="button danger">Excluir</button>
+      </div>
+    </div>
+  </div>
+  <div id="notification-container" class="notification-container"></div>
 </body>
 
 </html>

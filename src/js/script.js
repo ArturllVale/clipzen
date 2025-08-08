@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const itemIdInput = document.getElementById('item-id');
   const itemTitleInput = document.getElementById('item-title');
   const itemContentInput = document.getElementById('item-content');
+  const isCodeSwitch = document.getElementById('is-code-switch');
+  const languageInputContainer = document.getElementById('language-input-container');
+  const codeLanguageInput = document.getElementById('code-language');
+
+  const markdownHelpBtn = document.getElementById('markdown-help-btn');
+  const markdownHelpDialog = document.getElementById('markdown-help-dialog');
+  const closeMarkdownHelpBtn = document.getElementById('close-markdown-help-btn');
 
   const menuBtn = document.getElementById('menu-btn');
   const menuDropdown = document.getElementById('menu-dropdown');
@@ -25,8 +32,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const exportBtn = document.getElementById('export-btn');
   const clearDataBtn = document.getElementById('clear-data-btn');
 
+  const confirmPopup = document.getElementById('confirmPopup');
+  const confirmYes = document.getElementById('confirmYes');
+  const confirmNo = document.getElementById('confirmNo');
+
   const installPwaBtn = document.getElementById('install-pwa-btn');
+  const notificationContainer = document.getElementById('notification-container');
   let deferredPrompt;
+  let itemToDeleteId = null;
 
   // --- PWA Install ---
   window.addEventListener('beforeinstallprompt', (e) => {
@@ -62,6 +75,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const STORAGE_KEY = 'clipboard_zen_items';
 
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
   function getItems(query = '') {
     let items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     if (query) {
@@ -83,11 +102,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     items.push(item);
     saveItems(items);
     renderItems();
+    showNotification('Item adicionado com sucesso!', 'success');
   }
 
   function updateItem(updatedItem) {
     let items = getItems();
-    items = items.map(item => item.id === updatedItem.id ? updatedItem : item);
+    const index = items.findIndex(item => item.id === updatedItem.id);
+    if (index > -1) {
+      items[index] = updatedItem;
+    }
     saveItems(items);
     renderItems();
   }
@@ -97,6 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     items = items.filter(item => item.id !== id);
     saveItems(items);
     renderItems();
+    showNotification('Item excluído com sucesso!', 'danger');
   }
 
   function clearAllItems() {
@@ -130,13 +154,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       items.forEach(item => {
         const itemEl = document.createElement('div');
         itemEl.className = 'clipboard-item';
+        let contentHTML;
+        if (item.isCode) {
+          const language = item.language || 'plaintext';
+          const highlightedCode = hljs.highlight(item.content, { language, ignoreIllegals: true }).value;
+          contentHTML = `<pre><code class="hljs ${language}">${highlightedCode}</code></pre>`;
+        } else {
+          contentHTML = marked.parse(item.content, { breaks: true });
+        }
+
+
         itemEl.innerHTML = `
-                    <div class="item-header">${item.title}</div>
-                    <div class="item-content">${item.content}</div>
+                    <div class="item-header">${escapeHTML(item.title)}</div>
+                    <div class="item-content-wrapper">
+                        <div class="item-content">${contentHTML}</div>
+                        <button class="expand-btn">Expandir</button>
+                    </div>
                     <div class="item-footer">
                         <span>${new Date(item.createdAt).toLocaleString()}</span>
                         <div class="item-actions">
-                            <button class="button icon-button copy-btn" data-content="${item.content}" title="Copiar">
+                            <button class="button icon-button copy-btn" data-id="${item.id}" title="Copiar">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-copy"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                             </button>
                             <button class="button icon-button edit-btn" data-id="${item.id}" title="Editar">
@@ -149,6 +186,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                 `;
         itemsGrid.appendChild(itemEl);
+
+        const contentWrapper = itemEl.querySelector('.item-content-wrapper');
+        const contentDiv = itemEl.querySelector('.item-content');
+        const expandBtn = itemEl.querySelector('.expand-btn');
+
+        // Adiciona um pequeno atraso para garantir que o DOM seja atualizado
+        setTimeout(() => {
+          const contentEl = item.isCode ? contentDiv.querySelector('pre') : contentDiv;
+          if (contentEl && contentEl.scrollHeight > contentWrapper.clientHeight) {
+            contentWrapper.classList.add('expandable');
+          }
+        }, 0);
       });
     }
     // Atualiza o estado do botão de exportar
@@ -157,6 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function updateExportButtonState(hasItems) {
     exportBtn.disabled = !hasItems;
+    clearDataBtn.disabled = !hasItems;
   }
 
   // Event Listeners
@@ -166,19 +216,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   closeDialogBtn.addEventListener('click', closeDialog);
   cancelDialogBtn.addEventListener('click', closeDialog);
 
-  addEditForm.addEventListener('submit', async (e) => {
+  addEditForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const id = itemIdInput.value;
     const title = itemTitleInput.value;
     const content = itemContentInput.value;
+    const isCode = isCodeSwitch.checked;
+    const language = codeLanguageInput.value;
+
+    const itemData = {
+      title,
+      content,
+      isCode,
+      language: isCode ? language : null,
+    };
 
     if (id) { // Editing
-      await updateItem({ id, title, content });
+      const items = getItems();
+      const existingItem = items.find(i => i.id === id);
+      updateItem({ ...existingItem, ...itemData });
     } else { // Adding
-      await addItem({
+      addItem({
         id: crypto.randomUUID(),
-        title,
-        content,
+        ...itemData,
         createdAt: Date.now()
       });
     }
@@ -186,15 +246,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   itemsGrid.addEventListener('click', (e) => {
-    if (e.target.classList.contains('copy-btn')) {
-      navigator.clipboard.writeText(e.target.dataset.content);
-      alert('Copiado!');
-    } else if (e.target.classList.contains('edit-btn')) {
-      openDialog('edit', e.target.dataset.id);
-    } else if (e.target.classList.contains('delete-btn')) {
-      if (confirm('Tem certeza que deseja excluir este item?')) {
-        deleteItem(e.target.dataset.id);
+    const copyBtn = e.target.closest('.copy-btn');
+    const editBtn = e.target.closest('.edit-btn');
+    const deleteBtn = e.target.closest('.delete-btn');
+    const expandBtn = e.target.closest('.expand-btn');
+
+    if (copyBtn) {
+      const id = copyBtn.dataset.id;
+      const items = getItems();
+      const item = items.find(i => i.id === id);
+      if (item) {
+        navigator.clipboard.writeText(item.content);
+        showNotification('Copiado para a área de transferência!', 'success');
       }
+    } else if (editBtn) {
+      openDialog('edit', editBtn.dataset.id);
+    } else if (deleteBtn) {
+      itemToDeleteId = deleteBtn.dataset.id;
+      const confirmDialog = document.getElementById('confirm-dialog');
+      confirmDialog.classList.remove('hidden');
+    } else if (expandBtn) {
+      const contentWrapper = expandBtn.closest('.item-content-wrapper');
+      contentWrapper.classList.toggle('expanded');
+      expandBtn.textContent = contentWrapper.classList.contains('expanded') ? 'Recolher' : 'Expandir';
     }
   });
 
@@ -238,9 +312,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   clearDataBtn.addEventListener('click', () => {
-    if (confirm('Tem certeza que deseja apagar todos os dados? Esta ação não pode ser desfeita.')) {
-      clearAllItems();
-    }
+    confirmPopup.style.display = 'flex'; // Mostra o popup
+  });
+
+  confirmYes.addEventListener('click', () => {
+    clearAllItems();
+    showNotification('Todos os itens foram removidos!', 'danger');
+    confirmPopup.style.display = 'none';
+  });
+
+  confirmNo.addEventListener('click', () => {
+    confirmPopup.style.display = 'none'; // Fecha sem fazer nada
+  });
+
+  markdownHelpBtn.addEventListener('click', () => {
+    markdownHelpDialog.classList.remove('hidden');
+  });
+
+  closeMarkdownHelpBtn.addEventListener('click', () => {
+    markdownHelpDialog.classList.add('hidden');
   });
 
 
@@ -253,15 +343,63 @@ document.addEventListener('DOMContentLoaded', async () => {
       itemIdInput.value = item.id;
       itemTitleInput.value = item.title;
       itemContentInput.value = item.content;
+      isCodeSwitch.checked = item.isCode || false;
+      codeLanguageInput.value = item.language || '';
     } else {
       dialogTitle.textContent = 'Adicionar Item';
+      isCodeSwitch.checked = false;
     }
+    toggleLanguageInput();
     addEditDialog.classList.remove('hidden');
   }
 
   function closeDialog() {
     addEditDialog.classList.add('hidden');
   }
+
+  function toggleLanguageInput() {
+    if (isCodeSwitch.checked) {
+      languageInputContainer.classList.remove('hidden');
+    } else {
+      languageInputContainer.classList.add('hidden');
+    }
+  }
+
+  isCodeSwitch.addEventListener('change', toggleLanguageInput);
+
+  function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notificationContainer.appendChild(notification);
+
+    setTimeout(() => {
+      notification.classList.add('fade-out');
+      notification.addEventListener('animationend', () => {
+        notification.remove();
+      });
+    }, 3000);
+  }
+
+  const confirmDialog = document.getElementById('confirm-dialog');
+  const closeConfirmDialogBtn = document.getElementById('close-confirm-dialog-btn');
+  const cancelConfirmBtn = document.getElementById('cancel-confirm-btn');
+  const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
+  function closeConfirmDialog() {
+    itemToDeleteId = null;
+    confirmDialog.classList.add('hidden');
+  }
+
+  closeConfirmDialogBtn.addEventListener('click', closeConfirmDialog);
+  cancelConfirmBtn.addEventListener('click', closeConfirmDialog);
+
+  confirmDeleteBtn.addEventListener('click', () => {
+    if (itemToDeleteId) {
+      deleteItem(itemToDeleteId);
+    }
+    closeConfirmDialog();
+  });
 
   renderItems(); // Chama renderItems diretamente, já que initDb não é mais necessário
 });
