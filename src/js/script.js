@@ -42,7 +42,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   let itemToDeleteId = null;
 
   // --- PWA Install ---
+  // Verifica se o app já está instalado
+  function isAppInstalled() {
+    // Verifica se está rodando como PWA
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      return true;
+    }
+
+    // Verifica se foi instalado anteriormente (usando localStorage)
+    return localStorage.getItem('appInstalled') === 'true';
+  }
+
+  // Esconde o botão de instalação se o app já estiver instalado
+  if (isAppInstalled()) {
+    installPwaBtn.classList.add('hidden');
+  }
+
   window.addEventListener('beforeinstallprompt', (e) => {
+    // Se o app já está instalado, não mostra o botão
+    if (isAppInstalled()) {
+      return;
+    }
+
     e.preventDefault();
     deferredPrompt = e;
     installPwaBtn.classList.remove('hidden');
@@ -55,6 +76,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (outcome === 'accepted') {
         deferredPrompt = null;
         installPwaBtn.classList.add('hidden');
+        // Marca o app como instalado
+        localStorage.setItem('appInstalled', 'true');
       }
     }
   });

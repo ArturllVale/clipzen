@@ -33,13 +33,14 @@ Clipboard Zen é um gerenciador de área de transferência web que permite salva
 4. **Buscar**: Use a barra de pesquisa para encontrar itens específicos
 5. **Copiar**: Clique no ícone de cópia para copiar o conteúdo para a área de transferência
 6. **Editar/Excluir**: Use os ícones correspondentes para editar ou excluir itens
+7. **Expandir/Recolher**: Quando o conteúdo é maior que o espaço disponível no card, um botão "Expandir" aparece no canto inferior direito para mostrar o conteúdo completo
 
 ## 📦 Instalação
 
 ### Como PWA
 
 1. Acesse o Clipboard Zen no seu navegador
-2. Clique no botão "Instalar App" que aparece quando disponível
+2. Clique no botão "Instalar App" que aparece quando disponível (o botão é ocultado automaticamente após a instalação)
 3. Siga as instruções do seu navegador para instalar
 
 ### Para Desenvolvimento
@@ -66,11 +67,11 @@ O arquivo `src/js/config.js` permite configurar o modo de operação:
 
 ```javascript
 const APP_CONFIG = {
-  MODE: 'development' // Altere para 'production' para habilitar o Service Worker
+  MODE: 'development' // Altere para 'production' para habilitar o Service Worker e funcionamento offline
 };
 ```
 
-- **development**: Modo de desenvolvimento (sem Service Worker)
+- **development**: Modo de desenvolvimento (sem Service Worker, sem funcionamento offline)
 - **production**: Modo de produção (com Service Worker para funcionamento offline)
 
 ## 📤 Importação/Exportação de Dados
