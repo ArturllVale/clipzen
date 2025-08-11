@@ -11,6 +11,7 @@
   --archived-background: #f8f8f8;
   --archived-text: #888;
   --pinned-indicator: #ffcc00;
+  --pure-white: #fff;
 }
 
 /* Modo escuro */
@@ -26,6 +27,7 @@
   --archived-background: #252525;
   --archived-text: #999;
   --pinned-indicator: #ffd700;
+  --pure-white: #fff;
 }
 
 body {
@@ -95,7 +97,7 @@ body {
   top: 50%;
   left: 0.75rem;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--archived-text);
 }
 
 #search-input {
@@ -160,8 +162,8 @@ body {
 [data-theme="dark"] #toggle-dark-mode-btn .light-icon {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
-  fill: #ffd700;
-  stroke: #ffd700;
+  fill: var(--pinned-indicator);
+  stroke: var(--pinned-indicator);
 }
 
 [data-theme="dark"] #toggle-dark-mode-btn .dark-icon {
@@ -285,8 +287,8 @@ body {
 .item-content:focus {
   outline: 2px solid transparent;
   outline-offset: 2px;
-  box-shadow: 0 0 0 0px #fff, 0 0 0 calc(2px + 0px) rgb(59 130 246 / 50%), 0 0 #0000;
-  border-color: rgb(59 130 246 / 50%);
+  box-shadow: 0 0 0 0px var(--card-background), 0 0 0 calc(2px + 0px) var(--primary-color), 0 0 #0000;
+  border-color: var(--primary-color);
 }
 
 /* Estilos para o conteúdo renderizado do markdown */
@@ -306,7 +308,7 @@ body {
   position: absolute;
   bottom: 5px;
   right: 5px;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.8); /* Deixado como está para manter a transparência específica */
   border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
@@ -335,7 +337,7 @@ body {
   font-weight: 500;
   outline: 2px solid transparent;
   outline-offset: 2px;
-  box-shadow: 0 0 0 0px #fff, 0 0 0 calc(2px + 0px) rgb(59, 130, 246, 0.5), 0 0 #0000;
+  box-shadow: 0 0 0 0px var(--card-background), 0 0 0 calc(2px + 0px) var(--primary-color), 0 0 #0000;
 }
 
 .item-footer {
@@ -345,7 +347,7 @@ body {
   justify-content: space-between;
   align-items: center;
   font-size: 0.8rem;
-  color: #666;
+  color: var(--archived-text);
   flex-shrink: 0; /* Impede que o rodapé encolha */
 }
 
@@ -370,12 +372,13 @@ body {
 }
 
 .item-actions button.danger {
-  background-color: #ffb0b0; /* Vermelho padrão */
+  background-color: var(--accent-color);
+  opacity: 0.7;
 }
 
 .item-actions button.danger:hover {
-  background-color: #e53e3e; /* Vermelho mais forte */
-  color: white;
+  background-color: var(--accent-color);
+  color: var(--pure-white);
 }
 
 /* Empty State */
@@ -391,7 +394,7 @@ body {
   width: 96px;
   height: 96px;
   margin-bottom: 1.5rem;
-  color: #ccc;
+  color: var(--border-color);
 }
 
 /* Buttons */
@@ -405,22 +408,22 @@ body {
 
 .button.primary {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--pure-white);
   display: inline-flex !important;
 }
 
 .button.secondary {
-  background-color: #ccc;
-  color: #333;
+  background-color: var(--border-color);
+  color: var(--text-color);
 }
 
 .button.danger {
   background-color: var(--accent-color);
-  color: white;
+  color: var(--pure-white);
 }
 
 .button.danger:focus {
-  background-color: #f12315;
+  background-color: var(--accent-color);
 }
 
 .danger.menu-item {
@@ -440,7 +443,7 @@ body {
 .menu-dropdown {
   position: absolute;
   right: 0;
-  background-color: white;
+  background-color: var(--card-background);
   border: 1px solid var(--border-color);
   border-radius: 4px;
   box-shadow: var(--box-shadow);
@@ -466,7 +469,7 @@ body {
 .menu-dropdown button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background-color: #f0f0f0;
+  background-color: var(--background-color);
 }
 
 /* Dialog */
@@ -489,7 +492,7 @@ body {
 }
 
 .dialog-content {
-  background-color: white;
+  background-color: var(--card-background);
   padding: 1.6rem;
   border-radius: 8px;
   width: 90%;
@@ -523,8 +526,8 @@ body {
 }
 
 .markdown-help-btn {
-  background-color: #e0e0e0;
-  border: 1px solid #ccc;
+  background-color: var(--hover-color);
+  border: 1px solid var(--border-color);
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -542,7 +545,7 @@ body {
 }
 
 #markdown-help-dialog .dialog-content {
-    background-color: #ffffff;
+    background-color: var(--card-background);
     border-radius: 8px;
     box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
     max-width: 448px;
@@ -561,7 +564,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 8px;
     margin-bottom: 16px;
 }
@@ -569,14 +572,14 @@ body {
 #markdown-help-dialog .dialog-header h2 {
     font-size: 20px;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--text-color);
     margin: 0;
 }
 
 #markdown-help-dialog .close-button {
     font-size: 24px;
     font-weight: bold;
-    color: #6b7280;
+    color: var(--archived-text);
     background: none;
     border: none;
     cursor: pointer;
@@ -584,11 +587,11 @@ body {
 }
 
 #markdown-help-dialog .close-button:hover {
-    color: #374151;
+    color: var(--text-color);
 }
 
 .markdown-help-content {
-    color: #4b5563;
+    color: var(--archived-text);
 }
 
 .markdown-help-content p {
@@ -597,17 +600,17 @@ body {
 
 .markdown-help-content span {
     font-weight: 600;
-    color: #2563eb;
+    color: var(--primary-color);
 }
 
 .markdown-help-content code {
-    background-color: #f3f4f6;
+    background-color: var(--background-color);
     padding: 2px 4px;
     border-radius: 4px;
 }
 
 .markdown-help-content a {
-    color: #3b82f6;
+    color: var(--primary-color);
     text-decoration: none;
 }
 
@@ -657,7 +660,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: var(--border-color);
   transition: .4s;
 }
 
@@ -668,7 +671,7 @@ body {
   width: 26px;
   left: 4px;
   bottom: 4px;
-  background-color: white;
+  background-color: var(--pure-white);
   transition: .4s;
 }
 
@@ -798,7 +801,7 @@ input:checked+.slider:before {
 
 .notification {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--pure-white);
   padding: 1rem;
   border-radius: 4px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -861,7 +864,7 @@ input:checked+.slider:before {
 }
 
 .popup-box {
-    background: #fff;
+    background: var(--card-background);
     padding: 20px 20px 1px 20px;
     border-radius: 8px;
     max-width: 400px;
@@ -888,8 +891,9 @@ input:checked+.slider:before {
 }
 
 .btn-danger {
-    background-color: #ffa2a0 !important;
-    color: #fff !important;
+    background-color: var(--accent-color) !important;
+    color: var(--pure-white) !important;
+    opacity: 0.8;
     padding: 8px 14px;
     border: none;
     border-radius: 4px;
@@ -897,8 +901,8 @@ input:checked+.slider:before {
 }
 
 .btn-secondary {
-    background-color: #ccc !important;
-    color: #333 !important;
+    background-color: var(--border-color) !important;
+    color: var(--text-color) !important;
     padding: 8px 14px;
     border: none;
     border-radius: 4px;
@@ -906,11 +910,11 @@ input:checked+.slider:before {
 }
 
 .btn-danger:hover {
-    background-color: #d32f2f !important;
+    background-color: var(--accent-color) !important;
 }
 
 .btn-secondary:hover {
-    background-color: #b0b0b0;
+    background-color: var(--hover-color);
 }
 
 @keyframes popupFadeIn {
@@ -933,8 +937,8 @@ input:checked+.slider:before {
   padding: 0.2rem 0.5rem;
   border-radius: 12px;
   font-size: 0.75rem;
-  background-color: #e0e0e0;
-  color: #333;
+  background-color: var(--hover-color);
+  color: var(--text-color);
   cursor: pointer;
 }
 
@@ -949,7 +953,7 @@ input:checked+.slider:before {
 
 .tag-filter.active {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--pure-white);
 }
 
 .tag-close {
@@ -1052,7 +1056,7 @@ input[type="color"] {
 .salvar-tag {
   padding: 0.5rem 1rem;
   background-color: var(--primary-color);
-  color: white;
+  color: var(--pure-white);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -1077,7 +1081,7 @@ input[type="color"] {
 }
 
 .tag-item .tag {
-  color: white;
+  color: var(--pure-white);
   font-weight: bold;
 }
 
@@ -1118,7 +1122,7 @@ input[type="color"] {
 }
 
 .tag.selectable {
-  color: white;
+  color: var(--pure-white);
   cursor: pointer;
   border: 2px solid transparent;
 }
