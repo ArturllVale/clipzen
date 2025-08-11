@@ -114,7 +114,7 @@ body {
 
 .actions-container {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.2rem;
   margin-left: auto; /* Empurra as ações para a direita */
 }
 
@@ -730,7 +730,7 @@ input:checked+.slider:before {
 
 @media (max-width: 500px) {
   .header-container {
-    gap: 0;
+    gap: 0.2rem;
   }
   .button {
     padding: 0.66rem 0.5rem 0.5rem 0.5rem; /* Ajusta o padding para telas menores */
@@ -995,7 +995,6 @@ input[type="color"] {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin: 1rem 0;
   padding: 0.5rem;
   background-color: var(--card-background);
   border-radius: 8px;
@@ -1016,4 +1015,115 @@ input[type="color"] {
 
 .clear-filters:hover {
   text-decoration: underline;
+}
+
+/* Estilos para o diálogo de Gerenciar Tags */
+#manage-tags-dialog .dialog-content {
+  max-width: 500px;
+}
+
+#add-tag-form {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  flex-flow: column;
+}
+
+#tag-color-container {
+  flex-flow: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  max-width: 100%;
+}
+
+@media (max-width: 500px) {
+  #tag-color-container {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+#tag-name-input {
+  flex-grow: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.salvar-tag {
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.tags-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.tag-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tag-item:last-child {
+  border-bottom: none;
+}
+
+.tag-item .tag {
+  color: white;
+  font-weight: bold;
+}
+
+.delete-tag-btn {
+  padding: 0.2rem;
+}
+
+.tag-color-option {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px !important;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease;
+  margin: 2px;
+}
+
+.tag-color-option:checked {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 5px 2px var(--primary-color);
+  transform: scale(1.1);
+  z-index: 1;
+}
+
+.tag-color-option:hover {
+  transform: scale(1.1);
+}
+
+.tags-container-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.tag.selectable {
+  color: white;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.tag.selectable.selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 5px var(--primary-color);
 }

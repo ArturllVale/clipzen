@@ -83,6 +83,15 @@
                 </svg>
                 <span>Exportar json</span>
               </button>
+              <button id="manage-tags-btn" class="menu-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="feather feather-tag">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                  <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                </svg>
+                <span>Gerenciar Tags</span>
+              </button>
               <button id="toggle-archived-btn" class="menu-item">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -180,15 +189,11 @@
             <input type="text" id="code-language" placeholder="ex: javascript, python, html">
           </div>
           <div class="form-group">
-            <label for="item-tags">Tags (separadas por vírgula)</label>
-            <input type="text" id="item-tags" placeholder="ex: trabalho, código, ideias">
-          </div>
-          <div class="form-group">
-            <label for="item-color">Cor</label>
-            <div class="color-selector">
-              <input type="color" id="item-color" value="#ffffff">
-              <span class="color-preview"></span>
+            <label for="item-tags">Tags</label>
+            <div id="item-tags-container" class="tags-container-edit">
+              <!-- Tags selecionáveis serão inseridas aqui -->
             </div>
+            <input type="hidden" id="item-tags">
           </div>
           <div class="form-group">
             <div class="label-container">
@@ -241,6 +246,28 @@
     </div>
   </div>
   <div id="notification-container" class="notification-container"></div>
+
+  <!-- Diálogo para Gerenciar Tags -->
+  <div id="manage-tags-dialog" class="dialog hidden">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <h2>Gerenciar Tags</h2>
+        <button id="close-manage-tags-dialog-btn" class="close-button">&times;</button>
+      </div>
+      <form id="add-tag-form" class="form-group">
+        <input type="hidden" id="tag-id-input">
+        <input type="text" id="tag-name-input" placeholder="Nome da tag" required>
+        <div id="tag-color-container" class="color-selector">
+          <!-- Cores serão inseridas aqui pelo JS -->
+        </div>
+        <button type="submit" class="button primary salvar-tag">Salvar Tag</button>
+        <button type="button" id="cancel-edit-tag-btn" class="button secondary hidden">Cancelar</button>
+      </form>
+      <div id="tags-list" class="tags-list">
+        <!-- Lista de tags existentes será inserida aqui -->
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>

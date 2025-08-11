@@ -25,8 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const isCodeSwitch = document.getElementById('is-code-switch');
   const languageInputContainer = document.getElementById('language-input-container');
   const codeLanguageInput = document.getElementById('code-language');
-  const itemTagsInput = document.getElementById('item-tags');
-  const itemColorInput = document.getElementById('item-color');
+  const itemTagsContainer = document.getElementById('item-tags-container');
 
   const markdownHelpBtn = document.getElementById('markdown-help-btn');
   const markdownHelpDialog = document.getElementById('markdown-help-dialog');
@@ -40,6 +39,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const clearDataBtn = document.getElementById('clear-data-btn');
   const toggleArchivedBtn = document.getElementById('toggle-archived-btn');
   const toggleDarkModeBtn = document.getElementById('toggle-dark-mode-btn');
+  const manageTagsBtn = document.getElementById('manage-tags-btn');
+
+  // Elementos do diálogo de gerenciamento de tags
+  const manageTagsDialog = document.getElementById('manage-tags-dialog');
+  const closeManageTagsDialogBtn = document.getElementById('close-manage-tags-dialog-btn');
+  const addTagForm = document.getElementById('add-tag-form');
+  const tagNameInput = document.getElementById('tag-name-input');
+  const tagIdInput = document.getElementById('tag-id-input');
+  const tagColorContainer = document.getElementById('tag-color-container');
+  const tagsList = document.getElementById('tags-list');
+  const cancelEditTagBtn = document.getElementById('cancel-edit-tag-btn');
+
 
   const confirmPopup = document.getElementById('confirmPopup');
   const confirmYes = document.getElementById('confirmYes');
@@ -233,6 +244,61 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
   const STORAGE_KEY = 'clipboard_zen_items';
+  const TAGS_STORAGE_KEY = 'clipboard_zen_tags';
+
+
+  // --- Gerenciamento de Tags ---
+
+  // Cores predefinidas para as tags
+  const PREDEFINED_TAG_COLORS = [
+    '#e57373', '#f06292', '#ba68c8', '#9575cd', '#7986cb', '#64b5f6',
+    '#4fc3f7', '#4dd0e1', '#4db6ac', '#81c784', '#aed581', '#dce775',
+    '#fff176', '#ffd54f', '#ffb74d', '#ff8a65'
+  ];
+
+  // Função para obter todas as tags salvas
+  function getTags() {
+    return JSON.parse(localStorage.getItem(TAGS_STORAGE_KEY) || '[]');
+  }
+
+  // Função para salvar as tags
+  function saveTags(tags) {
+    localStorage.setItem(TAGS_STORAGE_KEY, JSON.stringify(tags));
+  }
+
+  // Função para adicionar uma nova tag
+  function addTag(tag) {
+    const tags = getTags();
+    tags.push(tag);
+    saveTags(tags);
+  }
+
+  // Função para atualizar uma tag existente
+  function updateTag(updatedTag) {
+    const tags = getTags();
+    const index = tags.findIndex(t => t.id === updatedTag.id);
+    if (index > -1) {
+      tags[index] = updatedTag;
+      saveTags(tags);
+    }
+  }
+
+  // Função para excluir uma tag
+  function deleteTag(tagId) {
+    const tags = getTags();
+    const updatedTags = tags.filter(t => t.id !== tagId);
+    saveTags(updatedTags);
+
+    // Opcional: remover a tag de todos os itens que a utilizam
+    const items = getItems();
+    items.forEach(item => {
+      if (item.tags && item.tags.includes(tagId)) {
+        item.tags = item.tags.filter(t => t !== tagId);
+        updateItem(item);
+      }
+    });
+  }
+
 
   // Variáveis para controle de filtros
   let activeTagFilters = [];
@@ -244,27 +310,64 @@ document.addEventListener('DOMContentLoaded', async () => {
     return div.innerHTML;
   }
 
-  // Função para processar string de tags em array
-  function processTags(tagsString) {
-    if (!tagsString) return [];
-    return tagsString.split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
+
+  // --- Funções do Diálogo de Gerenciamento de Tags ---
+
+  function openManageTagsDialog() {
+    renderTagsList();
+    renderTagColorOptions();
+    manageTagsDialog.classList.remove('hidden');
   }
 
-  // Função para obter todas as tags únicas
-  function getAllTags() {
-    const items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    const allTags = new Set();
+  function closeManageTagsDialog() {
+    manageTagsDialog.classList.add('hidden');
+  }
 
-    items.forEach(item => {
-      if (item.tags && Array.isArray(item.tags)) {
-        item.tags.forEach(tag => allTags.add(tag));
-      }
+  function renderTagColorOptions() {
+    tagColorContainer.innerHTML = '';
+    PREDEFINED_TAG_COLORS.forEach(color => {
+      const colorOption = document.createElement('input');
+      colorOption.type = 'radio';
+      colorOption.name = 'tag-color';
+      colorOption.value = color;
+      colorOption.style.backgroundColor = color;
+      colorOption.classList.add('tag-color-option');
+      tagColorContainer.appendChild(colorOption);
     });
-
-    return Array.from(allTags).sort();
+    // Seleciona a primeira cor por padrão
+    if (tagColorContainer.firstChild) {
+      tagColorContainer.firstChild.checked = true;
+    }
   }
+
+  function renderTagsList() {
+    tagsList.innerHTML = '';
+    const tags = getTags();
+    if (tags.length === 0) {
+      tagsList.innerHTML = '<p>Nenhuma tag criada ainda.</p>';
+      return;
+    }
+
+    tags.forEach(tag => {
+      const tagEl = document.createElement('div');
+      tagEl.className = 'tag-item';
+      tagEl.innerHTML = `
+        <div>
+          <span class="tag" style="background-color: ${tag.color};">${tag.name}</span>
+        </div>
+        <div>
+          <button class="button icon-button edit-tag-btn" data-id="${tag.id}" title="Editar Tag">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+          </button>
+          <button class="button icon-button danger delete-tag-btn" data-id="${tag.id}" title="Excluir Tag">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+          </button>
+        </div>
+      `;
+      tagsList.appendChild(tagEl);
+    });
+  }
+
 
   function getItems(query = '') {
     let items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -280,14 +383,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       items = items.filter(item =>
         item.title.toLowerCase().includes(searchQuery) ||
         item.content.toLowerCase().includes(searchQuery) ||
-        (item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchQuery)))
+        (item.tags && item.tags.some(tagId => {
+          const tag = getTags().find(t => t.id === tagId);
+          return tag && tag.name.toLowerCase().includes(searchQuery);
+        }))
       );
     }
 
     // Filtrar por tags ativas
     if (activeTagFilters.length > 0) {
       items = items.filter(item =>
-        item.tags && activeTagFilters.every(tag => item.tags.includes(tag))
+        item.tags && activeTagFilters.every(tagId => item.tags.includes(tagId))
       );
     }
 
@@ -366,10 +472,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const itemEl = document.createElement('div');
         itemEl.className = 'clipboard-item';
 
-        // Aplica a cor personalizada, se existir
-        if (item.color) {
-          itemEl.classList.add('custom-color');
-          itemEl.style.borderLeftColor = item.color;
+        // Aplica a cor da primeira tag, se existir
+        if (item.tags && item.tags.length > 0) {
+          const firstTagId = item.tags[0];
+          const tag = getTags().find(t => t.id === firstTagId);
+          if (tag) {
+            itemEl.classList.add('custom-color');
+            itemEl.style.borderLeftColor = tag.color;
+          }
         }
 
         // Adiciona classe para itens fixados
@@ -399,9 +509,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                     ${item.tags && item.tags.length > 0 ? `
                     <div class="tags-container">
-                        ${item.tags.map(tag => `
-                            <span class="tag" data-tag="${tag}">${tag}</span>
-                        `).join('')}
+                        ${item.tags.map(tagId => {
+          const tag = getTags().find(t => t.id === tagId);
+          if (!tag) return '';
+          return `<span class="tag" data-tag-id="${tag.id}" style="background-color: ${tag.color};">${tag.name}</span>`;
+        }).join('')}
                     </div>
                     ` : ''}
                     <div class="item-footer">
@@ -457,10 +569,81 @@ document.addEventListener('DOMContentLoaded', async () => {
   emptyStateAddBtn.addEventListener('click', () => openDialog('add'));
   closeDialogBtn.addEventListener('click', closeDialog);
   cancelDialogBtn.addEventListener('click', closeDialog);
+  manageTagsBtn.addEventListener('click', openManageTagsDialog);
+  closeManageTagsDialogBtn.addEventListener('click', closeManageTagsDialog);
+
+  addTagForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = tagNameInput.value.trim();
+    const colorInput = tagColorContainer.querySelector('input[name="tag-color"]:checked');
+    const tagId = tagIdInput.value;
+
+    if (name && colorInput) {
+      if (tagId) {
+        // Editando tag existente
+        const updatedTag = { id: tagId, name, color: colorInput.value };
+        updateTag(updatedTag);
+        showNotification('Tag atualizada com sucesso!', 'success');
+      } else {
+        // Adicionando nova tag
+        const newTag = {
+          id: crypto.randomUUID(),
+          name,
+          color: colorInput.value
+        };
+        addTag(newTag);
+        showNotification('Tag adicionada com sucesso!', 'success');
+      }
+      resetTagForm();
+      renderTagsList();
+      renderItems();
+    } else {
+      showNotification('Por favor, preencha o nome e selecione uma cor.', 'danger');
+    }
+  });
+
+  function resetTagForm() {
+    tagIdInput.value = '';
+    tagNameInput.value = '';
+    addTagForm.querySelector('button[type="submit"]').textContent = 'Adicionar Tag';
+    cancelEditTagBtn.classList.add('hidden');
+    // Seleciona a primeira cor por padrão
+    if (tagColorContainer.firstChild) {
+      tagColorContainer.firstChild.checked = true;
+    }
+  }
+
+  cancelEditTagBtn.addEventListener('click', resetTagForm);
+
+  tagsList.addEventListener('click', (e) => {
+    const deleteBtn = e.target.closest('.delete-tag-btn');
+    const editBtn = e.target.closest('.edit-tag-btn');
+
+    if (deleteBtn) {
+      const tagId = deleteBtn.dataset.id;
+      if (confirm('Tem certeza que deseja excluir esta tag? Isso também a removerá de todos os itens.')) {
+        deleteTag(tagId);
+        renderTagsList();
+        renderItems(); // Atualiza os itens para remover a tag excluída
+        showNotification('Tag excluída com sucesso!', 'danger');
+      }
+    } else if (editBtn) {
+      const tagId = editBtn.dataset.id;
+      const tag = getTags().find(t => t.id === tagId);
+      if (tag) {
+        tagIdInput.value = tag.id;
+        tagNameInput.value = tag.name;
+        tagColorContainer.querySelector(`input[value="${tag.color}"]`).checked = true;
+        addTagForm.querySelector('button[type="submit"]').textContent = 'Salvar Alterações';
+        cancelEditTagBtn.classList.remove('hidden');
+      }
+    }
+  });
+
 
   // Função para atualizar os filtros de tags
   function updateTagFilters() {
-    const allTags = getAllTags();
+    const allTags = getTags();
 
     // Se não houver tags, esconde o container de filtros
     if (allTags.length === 0) {
@@ -476,11 +659,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       tagsFilterContainer.classList.remove('hidden');
 
       // Adiciona cada tag ativa como um filtro
-      activeTagFilters.forEach(tag => {
-        const tagEl = document.createElement('span');
-        tagEl.className = 'tag tag-filter active';
-        tagEl.textContent = tag;
-        tagEl.dataset.tag = tag;
+      activeTagFilters.forEach(tagId => {
+        const tagInfo = getTags().find(t => t.id === tagId);
+        if (!tagInfo) return;
+
+        const tagFilterEl = document.createElement('span');
+        tagFilterEl.className = 'tag tag-filter active';
+        tagFilterEl.textContent = tagInfo.name;
+        tagFilterEl.dataset.tagId = tagInfo.id;
+        tagFilterEl.style.backgroundColor = tagInfo.color;
 
         const closeBtn = document.createElement('span');
         closeBtn.className = 'tag-close';
@@ -488,13 +675,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         closeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           // Remove a tag dos filtros ativos
-          activeTagFilters = activeTagFilters.filter(t => t !== tag);
+          activeTagFilters = activeTagFilters.filter(t => t !== tagId);
           updateTagFilters();
           renderItems();
         });
 
-        tagEl.appendChild(closeBtn);
-        activeTagFiltersContainer.appendChild(tagEl);
+        tagFilterEl.appendChild(closeBtn);
+        activeTagFiltersContainer.appendChild(tagFilterEl);
       });
     } else {
       tagsFilterContainer.classList.add('hidden');
@@ -515,16 +702,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const content = itemContentInput.value;
     const isCode = isCodeSwitch.checked;
     const language = codeLanguageInput.value;
-    const tagsString = itemTagsInput.value;
-    const color = itemColorInput.value;
+
+    // Obter tags selecionadas
+    const selectedTags = Array.from(itemTagsContainer.querySelectorAll('.tag.selected')).map(t => t.dataset.tagId);
 
     const itemData = {
       title,
       content,
       isCode,
       language: isCode ? language : null,
-      tags: processTags(tagsString),
-      color: color !== '#ffffff' ? color : null,
+      tags: selectedTags,
       pinned: id ? (getItems().find(i => i.id === id)?.pinned || false) : false,
       archived: id ? (getItems().find(i => i.id === id)?.archived || false) : false
     };
@@ -616,10 +803,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       togglePinItem(pinBtn.dataset.id);
     } else if (archiveBtn) {
       toggleArchiveItem(archiveBtn.dataset.id);
-    } else if (tagEl) {
-      const tag = tagEl.dataset.tag;
-      if (tag) {
-        addTagToFilter(tag);
+    } else if (tagEl && tagEl.closest('.tags-container')) { // Apenas tags dentro do card
+      const tagId = tagEl.dataset.tagId;
+      if (tagId) {
+        addTagToFilter(tagId);
       }
     }
   });
@@ -728,15 +915,39 @@ document.addEventListener('DOMContentLoaded', async () => {
       itemContentInput.value = item.content;
       isCodeSwitch.checked = item.isCode || false;
       codeLanguageInput.value = item.language || '';
-      itemTagsInput.value = item.tags ? item.tags.join(', ') : '';
-      itemColorInput.value = item.color || '#ffffff';
+      renderSelectableTags(item.tags || []);
     } else {
       dialogTitle.textContent = 'Adicionar Item';
       isCodeSwitch.checked = false;
-      itemColorInput.value = '#ffffff';
+      renderSelectableTags([]);
     }
     toggleLanguageInput();
     addEditDialog.classList.remove('hidden');
+  }
+
+  function renderSelectableTags(selectedTagIds = []) {
+    itemTagsContainer.innerHTML = '';
+    const allTags = getTags();
+
+    if (allTags.length === 0) {
+      itemTagsContainer.innerHTML = '<p>Nenhuma tag disponível. Crie tags em "Gerenciar Tags".</p>';
+      return;
+    }
+
+    allTags.forEach(tag => {
+      const tagEl = document.createElement('span');
+      tagEl.className = 'tag selectable';
+      tagEl.textContent = tag.name;
+      tagEl.dataset.tagId = tag.id;
+      tagEl.style.backgroundColor = tag.color;
+      if (selectedTagIds.includes(tag.id)) {
+        tagEl.classList.add('selected');
+      }
+      tagEl.addEventListener('click', () => {
+        tagEl.classList.toggle('selected');
+      });
+      itemTagsContainer.appendChild(tagEl);
+    });
   }
 
   function closeDialog() {
