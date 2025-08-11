@@ -1127,3 +1127,8 @@ input[type="color"] {
   border-color: var(--primary-color);
   box-shadow: 0 0 5px var(--primary-color);
 }
+
+.edit-tag-btn {
+  padding: 0.25rem !important;
+  margin-right: 0.25rem !important;
+}
